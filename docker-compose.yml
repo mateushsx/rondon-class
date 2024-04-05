@@ -1,0 +1,45 @@
+services:
+  rabbitmq-service:
+    container_name: 'rabbitmq'
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - rabbitmq_go_net
+
+  enrollment-service:
+    container_name: enrollment
+    build: ./enrollment-service
+    restart: always
+    ports:
+      - 3330:3330
+    env_file:
+      - ./enrollment-service/.env
+    networks:
+      - rabbitmq_go_net
+    depends_on:
+      - rabbitmq-service
+
+  student-service:
+    container_name: student
+    build: ./students-service
+    restart: always
+    ports:
+      - 3331:3331
+    env_file:
+      - ./students-service/.env
+    networks:
+      - rabbitmq_go_net
+    depends_on:
+      - rabbitmq-service
+
+networks:
+  rabbitmq_go_net:
+    driver: bridge
